@@ -1,27 +1,27 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
+import java.io.*;
 
 public class Table extends JPanel implements MouseListener {
 	
-	private Board board;
+	Board board;
 	boolean gameInProgress; 
+	int winner;
     int currentPlayer;
     int selectedRow;
 	int selectedCol;
 	int selectedChecker;
 	Point selectedCheckerCoord;
 	int userColor;
-	movesMade[] legalMoves;
-	JLabel message;
+	MovesMade[] legalMoves;
 	
 	Table(int color) {
 		board = new Board(8);
 		userColor = color;
 		System.out.println(userColor);
 		if (userColor == 1) {
-			
-			System.out.println("currentPlayer = Board.player1");
 			currentPlayer = Board.player1;
 			legalMoves = board.getLegalMoves(Board.player1);
 		}
@@ -29,24 +29,51 @@ public class Table extends JPanel implements MouseListener {
 			currentPlayer = Board.player2;
 			legalMoves = board.getLegalMoves(Board.player2);
 		}
-        //legalMoves = board.getLegalMoves(Board.player1); //searches for legal moves
         selectedRow = -1;
 		addMouseListener(this);
 		gameInProgress = true;
 		
 		selectedChecker = 0;
 		selectedCheckerCoord = new Point();
-
-		
-		message = new JLabel("",JLabel.CENTER);
-        message.setFont(new  Font("Serif", Font.BOLD, 14));
-        message.setHorizontalAlignment(SwingConstants.CENTER);
-        message.setForeground(Color.darkGray);
+		winner = 0;
 	}
-	
-	void gameOver(String str) { //when game is over
-        message.setText(str); //indicates who won
-        gameInProgress = false; //sets gameInProgress as false, until new game is initialized
+	/*
+	Table(String filename) {
+		System.out.println("Table(String filename)");
+		board = new Board(8);
+		try {
+			loadFromFile(filename);
+		}
+		catch (IOException ex) {}
+		System.out.println("Table: loadFromFile(filename)");
+		legalMoves = board.getLegalMoves(currentPlayer);
+		
+        selectedRow = -1;
+		addMouseListener(this);
+		gameInProgress = true;
+		
+		selectedChecker = 0;
+		selectedCheckerCoord = new Point();
+		winner = 0;
+		repaint();
+	}
+	*/
+	void gameOver() { //when game is over
+		System.out.println("gameOver: currentPlayer " + currentPlayer);
+        //message.setText(str); //indicates who won
+        gameInProgress = false;		//sets gameInProgress as false, until new game is initialized
+		for (int i = 0; i < 8; i++) {
+			for (int j = 0; j < 8; j++) {
+				if (board.board[i][j] == 1 || board.board[i][j] == 2) {
+					winner = 1;
+				}
+			}
+		}
+		if (winner == 0) {
+			winner = 3;
+		}
+		repaint();
+		return;
     }
 	
 	public void mousePressed(MouseEvent evt) { //when the board is clicked
@@ -65,7 +92,11 @@ public class Table extends JPanel implements MouseListener {
 			repaint();
 		}
 		
-		//BREAK
+		if (legalMoves == null) {
+			gameOver();
+			return;
+		}
+		
         for (int i = 0; i < legalMoves.length; i++){ //runs through all legal moves
             if (legalMoves[i].fromRow == row && legalMoves[i].fromCol == col) { //if selected piece can be moved
                 selectedRow = row; //assigns selected row
@@ -78,17 +109,29 @@ public class Table extends JPanel implements MouseListener {
         for (int i = 0; i < legalMoves.length; i++){ //runs through all legal moves
             if (legalMoves[i].fromRow == selectedRow && legalMoves[i].fromCol == selectedCol //if already selected piece can move
                 && legalMoves[i].toRow == row && legalMoves[i].toCol == col) { //and the selected piece's destination is legal
-					MakeMove(this.board, currentPlayer, legalMoves[i]); //make the move
+					makeMove(this.board, currentPlayer, legalMoves[i]); //make the move
 					selectedChecker = 0;
 					return;
             }
         }
     }
 	
-	void MakeMove(Board board, int player, movesMade move) { //moves the piece
+	void makeMove(Board board, int player, MovesMade move) { //moves the piece
         board.makeMove(board, currentPlayer, move); //calls makeMove method in Board class
-
+		//currentPlayer = board.pieceAt(move.toRow, move.toCol);
+		
+		//MovesMade mm = new MovesMade(this.board, this.board.board[move.toRow][move.toCol], move.fromRow, move.fromCol, move.toRow, move.toCol);
+		System.out.println("TABLE make move move.player " + move.player + " from " + move.fromRow + move.fromCol + " to " + move.toRow + move.toCol);
+		//System.out.println("TABLE move.isJump() " + move.isJump());
+		
+		if (move.isJump() == false) {
+			System.out.println("TABLE move.isJump() == false b.jumpedCheckers.clear();");
+			board.jumpedCheckers.clear();
+		}
+		
         if (move.isJump()) { //checks if player must continue jumping
+			//System.out.println("~TABLE go to move.isJump() " + move.isJump());
+			//System.out.println("Table. makeMove: currentPlayer after jump " + currentPlayer);
             legalMoves = board.getLegalJumpsFrom(currentPlayer, move.toRow, move.toCol);
 			
             if (legalMoves != null) { //if player must jump again
@@ -103,14 +146,16 @@ public class Table extends JPanel implements MouseListener {
         if (currentPlayer == Board.player1) { //if it was player 1's turn
             currentPlayer = Board.player2; //it's now player 2's
             legalMoves = board.getLegalMoves(currentPlayer); //gets legal moves for player 2
-            if (legalMoves == null) //if there aren't any moves, player 1 wins
-                gameOver("Game over. You win!");
-				
+			
+            if (legalMoves == null) { //if there aren't any moves, player 1 wins
+                gameOver();
+			}
         } else { //otherwise, if it was player 2's turn
             currentPlayer = Board.player1; //it's now player 1's turn
             legalMoves = board.getLegalMoves(currentPlayer); //gets legal moves for player 1
+			
             if (legalMoves == null) //if there aren't any moves, player 2 wins
-                gameOver("Game over. You lost");
+                gameOver();
         }
 
         selectedRow = -1; //no squares are not selected
@@ -128,6 +173,8 @@ public class Table extends JPanel implements MouseListener {
                 selectedCol = legalMoves[0].fromCol;
             }
         }
+		
+		
 
         repaint(); //repaints board
 
@@ -135,16 +182,17 @@ public class Table extends JPanel implements MouseListener {
 	
 	public void paintComponent(Graphics g) {
         super.paintComponent(g);
+		//System.out.println("paintComponent");
         //g.setColor(new Color(139,119,101)); //black
         //g.fillRect(0, 30, 324, 324);
 		g.setColor(Color.white);
 		g.fillRect(0, 0, 374, 374);
-        g.fillRect(400, 0, 200, 374);
+        //g.fillRect(400, 0, 200, 374);
 		Font big = new Font ("Courier New", 1, 14);
 		g.setColor(Color.black);
 		g.setFont(big);
 		
-		g.drawString("Move history", 450, 20);
+		//g.drawString("Move history", 450, 20);
 		
 		int num = 9;
 		int num1 = -1;
@@ -157,20 +205,17 @@ public class Table extends JPanel implements MouseListener {
 		String g1 = "G";
 		String h = "H";
 		
+		
 		for (int row = 0; row < 8; row++) {
 			num--;
-			num1++;
             for (int col = 0; col < 8; col++) {
 				g.setColor(Color.black);
 				if (col == 0) {
-					//g.drawString(String.valueOf(num), col*40 + 10, row*40 + 50);
-					g.drawString(String.valueOf(num1), col*40 + 10, row*40 + 50);
+					g.drawString(String.valueOf(num), col*40 + 10, row*40 + 50);
 				}	
 
 				if (col == 7) {
-					//g.drawString(String.valueOf(num), col*40 + 75, row*40 + 50);
-					g.drawString(String.valueOf(num1), col*40 + 75, row*40 + 50);
-
+					g.drawString(String.valueOf(num), col*40 + 75, row*40 + 50);
 				}	
 				
 				if ((col == 0 && row == 0)) {
@@ -267,6 +312,22 @@ public class Table extends JPanel implements MouseListener {
 				}
             }
         }
+		
+		if (gameInProgress == false) {
+			g.setColor(Color.white);
+			g.fillRect(0, 0, 374, 374);
+			Font big1 = new Font ("Courier New", 1, 14);
+			g.setColor(Color.black);
+			g.setFont(big1);
+			if (winner == 1) {
+				g.drawString("Game over. You win!", 84, 187);
+			}
+			else {
+				g.drawString("Game over. You lost", 84, 187);
+			}
+			
+		}
+		
     }
 	
 	public void paintChecker(Graphics g, int row, int column, int color, int king) {

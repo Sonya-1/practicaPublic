@@ -1,8 +1,10 @@
-import java.util.ArrayList;
+import java.util.*;
+import java.io.*;
 
 public class Board {
 	
-	private int [][] board;
+	public int [][] board;
+	public ArrayList jumpedCheckers;
 	
 	public static final int blank = 0;
     public static final int player1 = 1;
@@ -13,6 +15,7 @@ public class Board {
 	//public void 
 	Board(int dim) {
 		board = new int[dim][dim];
+		jumpedCheckers = new ArrayList();
         setUpBoard();
 	}
 	
@@ -21,17 +24,17 @@ public class Board {
             for (int col = 0; col < 8; col++) {
 				
 				if ( row % 2 == col % 2 ) { //white cells
-                    board[row][col] = blank;
-                } 
+					board[row][col] = blank;
+				} 
 				else {
 					if (row < 3) {
-                        board[row][col] = player2; 
+						board[row][col] = player2; 
 					}
-                    else if (row > 4) {
+					else if (row > 4) {
 						board[row][col] = player1; 
 					}
-                    else {
-                        board[row][col] = blank;
+					else {
+						board[row][col] = blank;
 					}
 				}
             }
@@ -45,149 +48,57 @@ public class Board {
         return board[row][col];
     }
 	
-	public void makeMove(Board b, int player, movesMade move) { //method that takes in movesMade type and makes a move
+	public void set(int val, int row, int col) {
+		if (row < 0 || row > 7 || col < 0 || col > 7) {
+			return;
+		}
+		board[row][col] = val;
+	}
+	
+	public void clearRoute(int row, int col, int toRow, int toCol) {
+		int stepRow = row < toRow ? 1 : -1;
+		int stepCol = col < toCol ? 1 : -1;
+
+		while (true) {
+			board[row][col] = blank;
+			System.out.println("clearRoute: row = " + row + " col = " + col);
+			if (row == toRow) {
+				break;
+			}
+			row += stepRow;
+			col += stepCol;
+		}
+	}
+	
+	public void makeMove(Board b, int player, MovesMade move) { //method that takes in MovesMade type and makes a move
 
         makeMove(this, player, move.fromRow, move.fromCol, move.toRow, move.toCol);
 
     }
 
     public void makeMove(Board b, int player, int fromRow, int fromCol, int toRow, int toCol) { //makesMove (in database sense)
-
-        board[toRow][toCol] = board[fromRow][fromCol]; //piece that was in original square is now in new square
-        board[fromRow][fromCol] = blank; //the original square is now blank
+		int val = board[fromRow][fromCol];
+		System.out.println("makeMove: from " + fromRow + fromCol + " to " + toRow + toCol);
 		
-		if (player == player1 || player == player2) {
-			if (fromRow - toRow == 2 || fromRow - toRow == -2){ //if a move is a jump
-
-				//the player jumps
-				int jumpRow = (fromRow + toRow) / 2;
-				int jumpCol = (fromCol + toCol) / 2;
-				board[jumpRow][jumpCol] = blank; //the original square is not blank
-
-			}
+		this.clearRoute(fromRow, fromCol, toRow, toCol);
+		
+		// up status
+		if (toRow == 0 && val == player1) {
+			val = playerKing1;
 		}
-        
-		if (player == playerKing1 || player == playerKing2) {
-			System.out.println("makeMove: move King");
-			if (fromRow >= toRow + 2 || fromRow >= toRow - 2) {
-				System.out.println("makeMove: King jump");
-				int count1 = 0;
-				int count2 = 0;
-				int count3 = 0;
-				int count4 = 0;
-				int opponent = 0;
-				int opponentKing = 0;
-				
-				if (player == 2) {
-					opponent = 3;
-					opponentKing = 4;
-				}
-				else {
-					opponent = 1;
-					opponentKing = 2;
-				}
-
-				if (fromRow < toRow && fromCol < toCol) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow + i, fromCol + i) == opponent || this.pieceAt(fromRow + i, fromCol + i) == opponentKing) {
-							count1++;
-						}
-					}
-				}
-				
-				if (fromRow > toRow && fromCol < toCol) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow - i, fromCol + i) == opponent || this.pieceAt(fromRow - i, fromCol + i) == opponentKing) {
-							count2++;
-						}
-					}
-				}
-				
-				if (fromRow < toRow && fromCol > toCol) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow + i, fromCol - i) == opponent || this.pieceAt(fromRow + i, fromCol - i) == opponentKing) {
-							count3++;
-						}
-					}
-				}
-				
-				if (fromRow > toRow && fromCol > toCol) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow - i, fromCol - i) == opponent || this.pieceAt(fromRow - i, fromCol - i) == opponentKing) {
-							count4++;
-						}
-					}
-				}
-				
-				Point jumpChecker = new Point();
-				System.out.println("makeMove: make jumpChecker");
-				
-				if (count1 == 1) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow + i, fromCol + i) == opponent || this.pieceAt(fromRow + i, fromCol + i) == opponentKing) {
-							System.out.println("makeMove: jumpChecker.row - " + (fromRow + i) + " jumpChecker.col - " + (fromCol + i));
-							jumpChecker.row = fromRow + i;
-							jumpChecker.col = fromCol + i;
-							break;
-						}
-					} 
-					board[jumpChecker.row][jumpChecker.col] = blank;
-				}
-				
-				if (count2 == 1) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow - i, fromCol + i) == opponent || this.pieceAt(fromRow - i, fromCol + i) == opponentKing) {
-							System.out.println("makeMove: jumpChecker.row - " + (fromRow - i) + " jumpChecker.col - " + (fromCol + i));
-							jumpChecker.row = fromRow - i;
-							jumpChecker.col = fromCol + i;
-							break;
-						}
-					} 
-					board[jumpChecker.row][jumpChecker.col] = blank;
-				}
-				
-				if (count3 == 1) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow + i, fromCol - i) == opponent || this.pieceAt(fromRow + i, fromCol - i) == opponentKing) {
-							System.out.println("makeMove: jumpChecker.row - " + (fromRow + i) + " jumpChecker.col - " + (fromCol - i));
-							jumpChecker.row = fromRow + i;
-							jumpChecker.col = fromCol - i;
-							break;
-						}
-					} 
-					board[jumpChecker.row][jumpChecker.col] = blank;
-				}
-				
-				if (count4 == 1) {
-					for (int i = 1; i < 8; i++) {
-						if (this.pieceAt(fromRow - i, fromCol - i) == opponent || this.pieceAt(fromRow - i, fromCol - i) == opponentKing) {
-							System.out.println("makeMove: jumpChecker.row - " + (fromRow - i) + " jumpChecker.col - " + (fromCol - i));
-							jumpChecker.row = fromRow - i;
-							jumpChecker.col = fromCol - i;
-							break;
-						}
-					} 
-					board[jumpChecker.row][jumpChecker.col] = blank;
-				}
-			}
+		if (toRow == 7 && val == player2) {
+			val = playerKing2;
 		}
 
-        if (toRow == 0 && board[toRow][toCol] == player1){ //if a player 1 piece reaches top row
-            board[toRow][toCol] = playerKing1;
-        }
+		// write current state
+		board[toRow][toCol] = val;
+	}
 
-        if (toRow == 7 && board[toRow][toCol] == player2){ //if a player 2 piece reaches bottom row
-            board[toRow][toCol] = playerKing2; //it becomes a king
-        }
-    }
-
-    public movesMade[] getLegalMoves(int player) { //determines legal moves for player
-
-        if (player != player1 && player != player2) //if method is not called with a player
-            return null; //null is returned
-
+    public MovesMade[] getLegalMoves(int player) { //determines legal moves for player
+		//System.out.println("getLegalMoves: start for player " + player);
+		
         int playerKing;
-
+		
         //identifies player's kings
         if (player == player1){
             playerKing = playerKing1;
@@ -196,170 +107,178 @@ public class Board {
         }
 
         ArrayList moves = new ArrayList(); //creates a new Array to story legal moves
-
+		
         for (int row = 0; row < 8; row++){ //looks through all the squares of the boards
 
             for (int col = 0; col < 8; col++){
-
-                if (board[row][col] == player){ //if a square belongs to the player
-
-                    //check all possible jumps around the piece - if one found the player must jump
-                    if (canJump(player, row, col, row+1, col+1, row+2, col+2))
-                        moves.add(new movesMade(this, player, row, col, row+2, col+2));
-                    if (canJump(player, row, col, row-1, col+1, row-2, col+2))
-                        moves.add(new movesMade(this, player, row, col, row-2, col+2));
-                    if (canJump(player, row, col, row+1, col-1, row+2, col-2))
-                        moves.add(new movesMade(this, player, row, col, row+2, col-2));
-                    if (canJump(player, row, col, row-1, col-1, row-2, col-2))
-                        moves.add(new movesMade(this, player, row, col, row-2, col-2));
-
-                }
 				
-				if (board[row][col] == playerKing) {
-					System.out.println("getLegalMoves: finding jumps for King");
-					for (int i = 1; i < 7; i++) {
-						for (int j = 2; j < 7; j++) {
-							if (canJump(player, row, col, row + i, col + i, row + j, col + j))
-								moves.add(new movesMade(this, playerKing, row, col, row + j, col + j));
-							
-							if (canJump(player, row, col, row - i, col + i, row - j, col + j))
-								moves.add(new movesMade(this, playerKing, row, col, row - j, col + j));
-							
-							if (canJump(player, row, col, row + i, col - i, row + j, col - j))
-								moves.add(new movesMade(this, playerKing, row, col, row + j, col - j));
-							
-							if (canJump(player, row, col, row - i, col - i, row - j, col - j))
-								moves.add(new movesMade(this, playerKing, row, col, row - j, col - j));
-						}
-					}
+				if (board[row][col] == player){ //if a square belongs to the player
 					
+					//System.out.println("getLegalMoves: player " + player);
+					//check all possible jumps around the piece - if one found the player must jump
+					if (canJump(player, row, col, row+1, col+1, row+2, col+2)) {
+						moves.add(new MovesMade(this, player, row, col, row+2, col+2));
+					}
+					if (canJump(player, row, col, row-1, col+1, row-2, col+2)) {
+						moves.add(new MovesMade(this, player, row, col, row-2, col+2));
+					}
+					if (canJump(player, row, col, row+1, col-1, row+2, col-2)) {
+						moves.add(new MovesMade(this, player, row, col, row+2, col-2));
+					}
+					if (canJump(player, row, col, row-1, col-1, row-2, col-2)) {
+						moves.add(new MovesMade(this, player, row, col, row-2, col-2));
+					}
 				}
 				
-
-            }
-
+				if (board[row][col] == playerKing){ //if a square belongs to the playerKing
+					System.out.println("getLegalMoves: playerKing " + playerKing);		
+					for (int i = 0; i < 7; i++) {
+						if (canJumpKing(playerKing, row, col, row + i, col + i)) {
+							moves.add(new MovesMade(this, playerKing, row, col, row + i, col + i));
+							System.out.println("getLegalMoves: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+						}
+						if (canJumpKing(playerKing, row, col, row - i, col + i)) {
+							moves.add(new MovesMade(this, playerKing, row, col, row - i, col + i));
+							System.out.println("getLegalMoves: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+						}
+						if (canJumpKing(playerKing, row, col, row + i, col - i)) {
+							moves.add(new MovesMade(this, playerKing, row, col, row + i, col - i));
+							System.out.println("getLegalMoves: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+						}
+						if (canJumpKing(playerKing, row, col, row - i, col - i)) {
+							moves.add(new MovesMade(this, playerKing, row, col, row - i, col - i));
+							System.out.println("getLegalMoves: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+						}
+					}
+				}
+			}
         }
 
-        if (moves.size() == 0){ //if there are no jumps
 
+        if (moves.size() == 0){ //if there are no jumps
+			System.out.println("getLegalMoves:  there are no jumps");
             for (int row = 0; row < 8; row++){ //look through all the squares again
 
                 for (int col = 0; col < 8; col++){
+					
+					if (board[row][col] == player){ //if a square belongs to the player
 
-                    if (board[row][col] == player){ //if a square belongs to the player
-
-                        //check all possible normal moves around the piece - if one found, add it to the list
-                        if (canMove(player,row,col,row+1,col+1))
-                            moves.add(new movesMade(this, player, row,col,row+1,col+1));
-                        if (canMove(player,row,col,row-1,col+1))
-                            moves.add(new movesMade(this, player, row,col,row-1,col+1));
-                        if (canMove(player,row,col,row+1,col-1))
-                            moves.add(new movesMade(this, player, row,col,row+1,col-1));
-                        if (canMove(player,row,col,row-1,col-1))
-                            moves.add(new movesMade(this, player, row,col,row-1,col-1));
-
-                    }
+						//check all possible normal moves around the piece - if one found, add it to the list
+						if (canMove(player,row,col,row+1,col+1))
+							moves.add(new MovesMade(this, player, row,col,row+1,col+1));
+						if (canMove(player,row,col,row-1,col+1))
+							moves.add(new MovesMade(this, player, row,col,row-1,col+1));
+						if (canMove(player,row,col,row+1,col-1))
+							moves.add(new MovesMade(this, player, row,col,row+1,col-1));
+						if (canMove(player,row,col,row-1,col-1))
+							moves.add(new MovesMade(this, player, row,col,row-1,col-1));
+					}
 					
 					if (board[row][col] == playerKing) {
 						System.out.println("getLegalMoves: finding basic moves for King");
 						for (int i = 0; i < 7; i++) {
-							for (int j = 0; j < 7; j++) {
-								if (canMove(player, row, col, row + i, col + i))
-									moves.add(new movesMade(this, playerKing, row, col, row + i, col + i));
+							if (canMove(playerKing, row, col, row + i, col + i))
+								moves.add(new MovesMade(this, playerKing, row, col, row + i, col + i));
+										
+							if (canMove(playerKing, row, col, row - i, col + i))
+								moves.add(new MovesMade(this, playerKing, row, col, row - i, col + i));
 									
-								if (canMove(player, row, col, row - i, col + i))
-									moves.add(new movesMade(this, playerKing, row, col, row - i, col + i));
-									
-								if (canMove(player, row, col, row + i, col - i))
-									moves.add(new movesMade(this, playerKing, row, col, row + i, col - i));
-									
-								if (canMove(player, row, col, row - i, col - i))
-									moves.add(new movesMade(this, playerKing, row, col, row - i, col - i));
+							if (canMove(playerKing, row, col, row + i, col - i))
+								moves.add(new MovesMade(this, playerKing, row, col, row + i, col - i));
+										
+							if (canMove(playerKing, row, col, row - i, col - i)) {
+								moves.add(new MovesMade(this, playerKing, row, col, row - i, col - i));
 							}
 						}					
 					}
-					
                 }
             }
         }
 
         if (moves.size() == 0){ //if there are no normal moves
+			System.out.println("getLegalMoves: moves.size() == 0");
             return null; //the player cannot move
         }else { //otherwise, an array is created to store all the possible moves
-            movesMade[] moveArray = new movesMade[moves.size()];
+            MovesMade[] moveArray = new MovesMade[moves.size()];
             for (int i = 0; i < moves.size(); i++){
-                moveArray[i] = (movesMade)moves.get(i);
+                moveArray[i] = (MovesMade)moves.get(i);
             }
             return moveArray;
         }
 
     } 
 
-    public movesMade[] getLegalJumpsFrom(int player, int row, int col){ //determines legal jumps for player
-
-        if (player != player1 && player != player2) //if method is not called with a player
-            return null; //null is returned
-
-        int playerKing;
-
-        //identifies player's kings
-        if (player == player1){
+    public MovesMade[] getLegalJumpsFrom(int player, int row, int col){
+		//determines legal jumps for player
+		System.out.println("getLegalJumpsFrom: start row = " + row + " col = " + col + " board[row][col] = " + board[row][col]);
+		int playerKing = 0;
+		
+		if (player == player1){
             playerKing = playerKing1;
-        }else {
+        } else {
             playerKing = playerKing2;
         }
 
         ArrayList moves = new ArrayList(); //creates a new Array to story legal moves
-
-        if (board[row][col] == player){
-
-            //if there is a possible jump, add it to list
-            if (canJump(player, row, col, row+1, col+1, row+2, col+2))
-                moves.add(new movesMade(this, player, row, col, row+2, col+2));
-            if (canJump(player, row, col, row-1, col+1, row-2, col+2))
-                moves.add(new movesMade(this, player, row, col, row-2, col+2));
-            if (canJump(player, row, col, row+1, col-1, row+2, col-2))
-                moves.add(new movesMade(this, player, row, col, row+2, col-2));
-            if (canJump(player, row, col, row-1, col-1, row-2, col-2))
-                moves.add(new movesMade(this, player, row, col, row-2, col-2));
-
-        }
-		if (board[row][col] == playerKing) {
-			System.out.println("getLegalJumpsFrom: finding jumps for King");
-			for (int i = 1; i < 7; i++) {
-				for (int j = 2; j < 7; j++) {
-					if (canJump(player, row, col, row + i, col + i, row + j, col + j))
-						moves.add(new movesMade(this, playerKing, row, col, row + j, col + j));
-							
-					if (canJump(player, row, col, row - i, col + i, row - j, col + j))
-						moves.add(new movesMade(this, playerKing, row, col, row - j, col + j));
-							
-					if (canJump(player, row, col, row + i, col - i, row + j, col - j))
-						moves.add(new movesMade(this, playerKing, row, col, row + j, col - j));
-							
-					if (canJump(player, row, col, row - i, col - i, row - j, col - j))
-						moves.add(new movesMade(this, playerKing, row, col, row - j, col - j));
-				}
-			}
+		
+		if (board[row][col] == player){ //if a square belongs to the player
 					
+			System.out.println("getLegalJumpsFrom: player " + player);
+			//check all possible jumps around the piece - if one found the player must jump
+			if (canJump(player, row, col, row+1, col+1, row+2, col+2)) {
+				moves.add(new MovesMade(this, player, row, col, row+2, col+2));
+			}
+			if (canJump(player, row, col, row-1, col+1, row-2, col+2)) {
+				moves.add(new MovesMade(this, player, row, col, row-2, col+2));
+			}
+			if (canJump(player, row, col, row+1, col-1, row+2, col-2)) {
+				moves.add(new MovesMade(this, player, row, col, row+2, col-2));
+			}
+			if (canJump(player, row, col, row-1, col-1, row-2, col-2)) {
+				moves.add(new MovesMade(this, player, row, col, row-2, col-2));
+			}
 		}
 		
-        if (moves.size() == 0){ //if there are no possible moves
-            return null; //null is returned
-        }else { //otherwise, an array is created to store all the possible moves
-            movesMade[] moveArray = new movesMade[moves.size()];
-            for (int i = 0; i < moves.size(); i++){
-                moveArray[i] = (movesMade)moves.get(i);
-            }
-            return moveArray;
-        }
-    }
+		if (board[row][col] == playerKing){ //if a square belongs to the playerKing
+			System.out.println("getLegalJumpsFrom: playerKing " + playerKing);				
+			for (int i = 0; i < 7; i++) {
+				if (canJumpKing(playerKing, row, col, row + i, col + i)) {
+					moves.add(new MovesMade(this, playerKing, row, col, row + i, col + i));
+					System.out.println("getLegalJumpsFrom: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+				}
+				if (canJumpKing(playerKing, row, col, row - i, col + i)) {
+					moves.add(new MovesMade(this, playerKing, row, col, row - i, col + i));
+					System.out.println("getLegalJumpsFrom: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+				}
+				if (canJumpKing(playerKing, row, col, row + i, col - i)) {
+					moves.add(new MovesMade(this, playerKing, row, col, row + i, col - i));
+					System.out.println("getLegalJumpsFrom: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+				}
+				if (canJumpKing(playerKing, row, col, row - i, col - i)) {
+					moves.add(new MovesMade(this, playerKing, row, col, row - i, col - i));
+					System.out.println("getLegalJumpsFrom: create jump for " + playerKing + " from " + row + col + " to " + (row + i) + (col + i));
+				}
+			}
+		}
 		
+		if (moves.size() == 0) { //if there are no possible moves
+			return null; //null is returned
+		}
+		//otherwise, an array is created to store all the possible moves
+		MovesMade[] moveArray = new MovesMade[moves.size()];
+		for (int i = 0; i < moves.size(); i++) {
+			moveArray[i] = (MovesMade)moves.get(i);
+		}
+		return moveArray;
+	}
 
     private boolean canJump(int player, int r1, int c1, int r2, int c2, int r3, int c3){ //method checks for possible jumps
 
         if (r3 < 0 || r3 >= 8 || c3 < 0 || c3 >= 8 || r2 < 0 || r2 >= 8 || c2 < 0 || c2 >= 8) //if destination row or column is off board
             return false; //there is no jump, as the destination doesn't exist
+			
+		if (board[r1][c1] == blank) 
+			return false;
 
         if (board[r3][c3] != blank) //if the destination isn't blank
             return false; //there is no jump, as the destination is taken
@@ -369,213 +288,145 @@ public class Board {
 		
         if (player == player1) { //in the case of player 1
 		
+			//System.out.println("canJump: search jumps for player1");
+		
 			if (board[r2][c2] != player2 && board[r2][c2] != playerKing2) //if the middle piece isn't player 2's
                 return false; //there is no jump, as player 1 can't jump his own pieces
-
+				
+			System.out.println("canJump: find jump for player1 from " + r1 + c1 + " to " + r3 + c3);
             return true; //otherwise, jump is legal
         }
 		
-		else if (player == player2) { //in the case of player 2
+		if (player == player2) { //in the case of player 2
+		
+			//System.out.println("canJump: search jumps for player2");
 		
 			if (board[r2][c2] != player1 && board[r2][c2] != playerKing1) //if the middle piece isn't player 1's
 				return false; //there is no jump, as player 2 can't jump his own pieces
 			
             return true; //otherwise, jump is legal
         }
-		
-		else if (player == playerKing1) {
-			
-			System.out.println("canJump: search jumps for playerKing1");
-			
-			if (board[r2][c2] != player2 && board[r2][c2] != playerKing2) //if the middle piece isn't player 2's
-                return false; //there is no jump, as player 1 can't jump his own pieces
-			
-			int count = 0;
-			if (r1 < r3 && c1 < c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 + i, c1 + i) == player2 || this.pieceAt(r1 + i, c1 + i) == playerKing2) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 + i + j, c1 + i + j) != 0) 
-								return false;
-							if (this.pieceAt(r1 + i + j, c1 + i + j) == 0 && (r1 + i + j == r3) && (c1 + i + j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			
-			if (r1 > r3 && c1 < c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 - i, c1 + i) == player2 || this.pieceAt(r1 - i, c1 + i) == playerKing2) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 - i - j, c1 + i + j) != 0) 
-								return false;
-							if (this.pieceAt(r1 - i - j, c1 + i + j) == 0 && (r1 - i - j == r3) && (c1 + i + j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			
-			if (r1 < r3 && c1 > c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 + i, c1 - i) == player2 || this.pieceAt(r1 + i, c1 - i) == playerKing2) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 + i + j, c1 - i - j) != 0) 
-								return false;
-							if (this.pieceAt(r1 + i + j, c1 - i - j) == 0 && (r1 + i + j == r3) && (c1 - i - j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			
-			if (r1 > r3 && c1 > c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 - i, c1 - i) == player2 || this.pieceAt(r1 - i, c1 - i) == playerKing2) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 - i - j, c1 - i - j) != 0) 
-								return false;
-							if (this.pieceAt(r1 - i - j, c1 - i - j) == 0 && (r1 - i - j == r3) && (c1 - i - j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			/*
-			int count = 0;
-			if (r3 > r1) {
-				for (int i = r3; i < r1; i--) {
-					if (this.pieceAt(r3 + i, c3 + i) == 3 || this.pieceAt(r3 + i, c3 + i) == 4) {
-						count++;
-					}
-				}
-				if (count > 1) {
-					return false;
-				}
-			}
-			
-			if (r3 < r1) {
-				for (int i = r3; i < r1; i++) {
-					if (this.pieceAt(r3 + i, c3 + i) == 3 || this.pieceAt(r3 + i, c3 + i) == 4) {
-						count++;
-					}
-				}
-				if (count > 1) {
-					return false;
-				}
-			}
-			*/
-			System.out.println("playerKing1 canJump to " + r3 + " " + c3);
-			return true;
-		}
-		
-		else if (player == playerKing2) {
-			
-			System.out.println("canJump: search jumps for playerKing2");
-			
-			if (board[r2][c2] != player1 && board[r2][c2] != playerKing1) //if the middle piece isn't player 1's
-                return false; //there is no jump, as player 2 can't jump his own pieces
-				
-			int count = 0;
-			if (r1 < r3 && c1 < c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 + i, c1 + i) == player1 || this.pieceAt(r1 + i, c1 + i) == playerKing1) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 + i + j, c1 + i + j) != 0) 
-								return false;
-							if (this.pieceAt(r1 + i + j, c1 + i + j) == 0 && (r1 + i + j == r3) && (c1 + i + j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			
-			if (r1 > r3 && c1 < c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 - i, c1 + i) == player1 || this.pieceAt(r1 - i, c1 + i) == playerKing1) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 - i - j, c1 + i + j) != 0) 
-								return false;
-							if (this.pieceAt(r1 - i - j, c1 + i + j) == 0 && (r1 - i - j == r3) && (c1 + i + j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			
-			if (r1 < r3 && c1 > c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 + i, c1 - i) == player1 || this.pieceAt(r1 + i, c1 - i) == playerKing1) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 + i + j, c1 - i - j) != 0) 
-								return false;
-							if (this.pieceAt(r1 + i + j, c1 - i - j) == 0 && (r1 + i + j == r3) && (c1 - i - j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}
-			
-			if (r1 > r3 && c1 > c3) {
-				for (int i = 1; i < 8; i++) {
-					if (this.pieceAt(r1 - i, c1 - i) == player1 || this.pieceAt(r1 - i, c1 - i) == playerKing1) {
-						for (int j = 2; j < 8; j++) {
-							if (this.pieceAt(r1 - i - j, c1 - i - j) != 0) 
-								return false;
-							if (this.pieceAt(r1 - i - j, c1 - i - j) == 0 && (r1 - i - j == r3) && (c1 - i - j == c3)) {
-								System.out.println("canJump: true");
-								return true;
-							}
-						}
-					}
-				}
-			}	
-			
-			/*
-			int count = 0;
-			if (r3 > r1) {
-				for (int i = r3; i < r1; i--) {
-					if (this.pieceAt(r3 + i, c3 + i) == 1 || this.pieceAt(r3 + i, c3 + i) == 2) {
-						count++;
-					}
-				}
-				if (count > 1) {
-					return false;
-				}
-			}
-			
-			if (r3 < r1) {
-				for (int i = r3; i < r1; i++) {
-					if (this.pieceAt(r3 + i, c3 + i) == 1 || this.pieceAt(r3 + i, c3 + i) == 2) {
-						count++;
-					}
-				}
-				if (count > 1) {
-					return false;
-				}
-			}
-			*/
-			System.out.println("playerKing2 canJump to " + r3 + " " + c3);			
-			return true;
-		} 
-		
 		return false;
     }
+	
+	private boolean canJumpKing(int player, int r1, int c1, int r2, int c2) {
+		
+		if (player == player1 || player == player2) {
+			System.out.println("canJumpKing: player not a king");
+			return false;
+		}
+		
+		if (r2 < 0 || r2 >= 8 || c2 < 0 || c2 >= 8) //if destination row or column is off board
+            return false; //there is no move, as the destination doesn't exist
+
+        if (board[r2][c2] != blank) //if the destination isn't blank
+            return false; //there is no move, as the destination is taken
+		
+		int opponent = 0;
+		int opponentKing = 0;
+		
+		if (player == playerKing1) {
+			opponent = player2;
+			opponentKing = playerKing2;
+		}
+		else {
+			opponent = player1;
+			opponentKing = playerKing1;
+		}
+		
+		int rd = 0;
+		int cd = 0;
+		if (r1 < r2 && c1 < c2) {
+				
+			for (int i = 1; i < 8; i++) {
+				if (this.pieceAt(r1 + i, c1 + i) == opponent || this.pieceAt(r1 + i, c1 + i) == opponentKing) {
+					rd = r1 + i;
+					cd = c1 + i;
+					break;
+				}
+			}
+				
+			if (r2 > rd && c2 > cd && cd != 0 && rd != 0) {
+				//System.out.println("canJumpKing: r2 > rd && c2 > cd " + r2 + rd + " " + c2 + cd);
+				if (canMove(player, rd, cd, r2, c2)) {
+					jumpedCheckers.add(new Point(rd, cd));
+					//System.out.println("canJumpKing: canMove from " + r1 + c1 + " to " + r2 + c2);
+					return true;
+				}
+			}
+			else {
+				return false;
+			}
+		}
+			
+		if (r1 > r2 && c1 < c2) {
+			for (int i = 1; i < 8; i++) {
+				if (this.pieceAt(r1 - i, c1 + i) == 1 || this.pieceAt(r1 - i, c1 + i) == 2 || 
+				this.pieceAt(r1 - i, c1 + i) == 3 || this.pieceAt(r1 - i, c1 + i) == 4) {
+					rd = r1 - i;
+					cd = c1 + i;
+					break;
+				}
+			}
+				
+			if ((r2 < rd && c2 > cd) && cd != 0 && rd != 0) {
+				if (canMove(player, rd, cd, r2, c2)) {
+					jumpedCheckers.add(new Point(rd, cd));
+					//System.out.println("canJumpKing: canMove from " + r1 + c1 + " to " + r2 + c2);
+					return true;
+				}
+			}
+			else {
+				return false;
+			}
+		}
+	
+		if (r1 < r2 && c1 > c2) {
+			for (int i = 1; i < 8; i++) {
+				if (this.pieceAt(r1 + i, c1 - i) == 1 || this.pieceAt(r1 + i, c1 - i) == 2 || 
+				this.pieceAt(r1 + i, c1 - i) == 3 || this.pieceAt(r1 + i, c1 - i) == 4) {
+					rd = r1 + i;
+					cd = c1 - i;
+					break;
+				}
+			}
+				
+			if ((r2 > rd && c2 < cd) && cd != 0 && rd != 0) {
+				if (canMove(player, rd, cd, r2, c2)) {
+					jumpedCheckers.add(new Point(rd, cd));
+					System.out.println("canJumpKing: jumpedCheckers.add(new Point(rd, cd)); " + rd + cd);
+					//System.out.println("canJumpKing: canMove from " + r1 + c1 + " to " + r2 + c2);
+					return true;
+				}
+			}
+			else {
+				return false;
+			}
+		}
+			
+		if (r1 > r2 && c1 > c2) {
+			for (int i = 1; i < 8; i++) {
+				if (this.pieceAt(r1 - i, c1 - i) == 1 || this.pieceAt(r1 - i, c1 - i) == 2 || 
+				this.pieceAt(r1 - i, c1 - i) == 3 || this.pieceAt(r1 - i, c1 - i) == 4) {
+					rd = r1 - i;
+					cd = c1 - i;
+					break;
+				}
+			}
+				
+			if ((r2 < rd && c2 < cd) && cd != 0 && rd != 0) {
+				if (canMove(player, rd, cd, r2, c2)) {
+					jumpedCheckers.add(new Point(rd, cd));
+					//System.out.println("canJumpKing: canMove from " + r1 + c1 + " to " + r2 + c2);
+					return true;
+				}
+			}
+			else {
+				return false;
+			}					
+		}
+		return false;
+	}
 
     private boolean canMove(int player, int r1, int c1, int r2, int c2){ //method checks for possible normal moves
 
@@ -590,12 +441,91 @@ public class Board {
                 return false; //there is no move, as player 1 can only move upwards
             return true; //otherwise, move is legal
         }
+		
 		else if (player == player2) { //in the case of player 2
             if (board[r1][c1] == player2 && r2 < r1) //if destination row is less than the original
                 return false; //there is no move, as player 2 can only move downwards
             return true; //otherwise, move is legal
         }
 		
-		return true;
+		else if (player == playerKing1 || player == playerKing2) {
+			int rd = 0;
+			int cd = 0;
+			if (r1 < r2 && c1 < c2) {
+				
+				for (int i = 1; i < 8; i++) {
+					if (this.pieceAt(r1 + i, c1 + i) == 1 || this.pieceAt(r1 + i, c1 + i) == 2 || 
+					this.pieceAt(r1 + i, c1 + i) == 3 || this.pieceAt(r1 + i, c1 + i) == 4) {
+						rd = r1 + i;
+						cd = c1 + i;
+						break;
+					}
+				}
+				
+				if ((r2 < rd && c2 < cd) || (rd == 0 && cd == 0)) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			
+
+			if (r1 > r2 && c1 < c2) {
+				for (int i = 1; i < 8; i++) {
+					if (this.pieceAt(r1 - i, c1 + i) == 1 || this.pieceAt(r1 - i, c1 + i) == 2 || 
+					this.pieceAt(r1 - i, c1 + i) == 3 || this.pieceAt(r1 - i, c1 + i) == 4) {
+						rd = r1 - i;
+						cd = c1 + i;
+						break;
+					}
+				}
+				
+				if ((r2 > rd && c2 < cd) || (rd == 0 && cd == 0)) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			
+			if (r1 < r2 && c1 > c2) {
+				for (int i = 1; i < 8; i++) {
+					if (this.pieceAt(r1 + i, c1 - i) == 1 || this.pieceAt(r1 + i, c1 - i) == 2 || 
+					this.pieceAt(r1 + i, c1 - i) == 3 || this.pieceAt(r1 + i, c1 - i) == 4) {
+						rd = r1 + i;
+						cd = c1 - i;
+						break;
+					}
+				}
+				
+				if ((r2 < rd && c2 > cd) || (rd == 0 && cd == 0)) {
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			
+			if (r1 > r2 && c1 > c2) {
+				for (int i = 1; i < 8; i++) {
+					if (this.pieceAt(r1 - i, c1 - i) == 1 || this.pieceAt(r1 - i, c1 - i) == 2 || 
+					this.pieceAt(r1 - i, c1 - i) == 3 || this.pieceAt(r1 - i, c1 - i) == 4) {
+						rd = r1 - i;
+						cd = c1 - i;
+						break;
+					}
+				}
+				
+				if ((r2 > rd && c2 > cd) || (rd == 0 && cd == 0)) {
+					return true;
+				}
+				else {
+					return false;
+				}					
+			}
+		}
+		
+		return false;
     }
 }

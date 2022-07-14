@@ -7,7 +7,7 @@ public class ColorDialog {
 	
     ColorDialog() {  
         JFrame f= new JFrame();  
-        d = new JDialog(f , "Dialog Example", true);  
+        d = new JDialog(f , "ColorDialog", true);  
         d.setLayout( new FlowLayout() );  
         JButton black = new JButton ("Black");  
 		JButton white = new JButton ("White");  
@@ -28,7 +28,8 @@ public class ColorDialog {
         d.add( new JLabel ("Chosee the color of the checkers"));  
         d.add(black);   
 		d.add(white);
-        d.setSize(400,300);       
+        d.setSize(400,300);   
+		d.setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
         d.setVisible(true);  
     }  
 	
