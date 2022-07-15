@@ -1,8 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
-import java.io.*;
 
 public class Table extends JPanel implements MouseListener {
 	
@@ -16,75 +14,60 @@ public class Table extends JPanel implements MouseListener {
 	Point selectedCheckerCoord;
 	int userColor;
 	MovesMade[] legalMoves;
+	Font big = new Font ("Courier New", 1, 14);
+	String a = "A";
+	String b = "B";
+	String c = "C";
+	String d = "D";
+	String e = "E";
+	String f = "F";
+	String g1 = "G";
+	String h = "H";
 	
 	Table(int color) {
 		board = new Board(8);
 		userColor = color;
-		System.out.println(userColor);
 		if (userColor == 1) {
-			currentPlayer = Board.player1;
-			legalMoves = board.getLegalMoves(Board.player1);
+			currentPlayer = Board.PLAYER_1;
+			legalMoves = board.getLegalMoves(Board.PLAYER_1);
 		}
 		else {
-			currentPlayer = Board.player2;
-			legalMoves = board.getLegalMoves(Board.player2);
+			currentPlayer = Board.PLAYER_2;
+			legalMoves = board.getLegalMoves(Board.PLAYER_2);
 		}
         selectedRow = -1;
 		addMouseListener(this);
 		gameInProgress = true;
-		
 		selectedChecker = 0;
 		selectedCheckerCoord = new Point();
 		winner = 0;
 	}
-	/*
-	Table(String filename) {
-		System.out.println("Table(String filename)");
-		board = new Board(8);
-		try {
-			loadFromFile(filename);
-		}
-		catch (IOException ex) {}
-		System.out.println("Table: loadFromFile(filename)");
-		legalMoves = board.getLegalMoves(currentPlayer);
-		
-        selectedRow = -1;
-		addMouseListener(this);
-		gameInProgress = true;
-		
-		selectedChecker = 0;
-		selectedCheckerCoord = new Point();
-		winner = 0;
-		repaint();
-	}
-	*/
-	void gameOver() { //when game is over
-		System.out.println("gameOver: currentPlayer " + currentPlayer);
-        //message.setText(str); //indicates who won
-        gameInProgress = false;		//sets gameInProgress as false, until new game is initialized
+	
+	void gameOver() {
+        gameInProgress = false;	
 		for (int i = 0; i < 8; i++) {
 			for (int j = 0; j < 8; j++) {
-				if (board.board[i][j] == 1 || board.board[i][j] == 2) {
-					winner = 1;
+				if (board.pieceAt(i, j) == Board.PLAYER_1 || board.pieceAt(i, j) == Board.PLAYER_KING_1) {
+					winner = Board.PLAYER_1;
 				}
 			}
 		}
 		if (winner == 0) {
-			winner = 3;
+			winner = Board.PLAYER_2;
 		}
 		repaint();
 		return;
     }
 	
-	public void mousePressed(MouseEvent evt) { //when the board is clicked
-		int col = (evt.getX() - 27) / 40; //calculation of square's column
-		int row = (evt.getY() - 27) / 40; //calculation of square's row
-        if (col >= 0 && col < 8 && row >= 0 && row < 8) {//if square is on the board
-            clickedSquare(row,col); //calls ClickedSquare
+	public void mousePressed(MouseEvent evt) { 
+		int col = (evt.getX() - 27) / 40; 
+		int row = (evt.getY() - 27) / 40; 
+        if (col >= 0 && col < 8 && row >= 0 && row < 8) {
+            clickedSquare(row,col);
         }
     }
 	
-	void clickedSquare(int row, int col) { //processes legal moves
+	void clickedSquare(int row, int col) { 
 		if (board.pieceAt(row,col) != 0) {
 			selectedChecker = 1;
 			selectedCheckerCoord.row = row;
@@ -97,115 +80,84 @@ public class Table extends JPanel implements MouseListener {
 			return;
 		}
 		
-        for (int i = 0; i < legalMoves.length; i++){ //runs through all legal moves
-            if (legalMoves[i].fromRow == row && legalMoves[i].fromCol == col) { //if selected piece can be moved
-                selectedRow = row; //assigns selected row
-                selectedCol = col; //assigns selected column
-                //repaint(); //repaints board
+        for (int i = 0; i < legalMoves.length; i++){ 
+            if (legalMoves[i].fromRow == row && legalMoves[i].fromCol == col) { 
+                selectedRow = row; 
+                selectedCol = col; 
                 return;
             }
         }
 
-        for (int i = 0; i < legalMoves.length; i++){ //runs through all legal moves
-            if (legalMoves[i].fromRow == selectedRow && legalMoves[i].fromCol == selectedCol //if already selected piece can move
-                && legalMoves[i].toRow == row && legalMoves[i].toCol == col) { //and the selected piece's destination is legal
-					makeMove(this.board, currentPlayer, legalMoves[i]); //make the move
+        for (int i = 0; i < legalMoves.length; i++){ 
+            if (legalMoves[i].fromRow == selectedRow && legalMoves[i].fromCol == selectedCol 
+                && legalMoves[i].toRow == row && legalMoves[i].toCol == col) { 
+					makeMove(this.board, currentPlayer, legalMoves[i]); 
 					selectedChecker = 0;
 					return;
             }
         }
     }
 	
-	void makeMove(Board board, int player, MovesMade move) { //moves the piece
-        board.makeMove(board, currentPlayer, move); //calls makeMove method in Board class
-		//currentPlayer = board.pieceAt(move.toRow, move.toCol);
-		
-		//MovesMade mm = new MovesMade(this.board, this.board.board[move.toRow][move.toCol], move.fromRow, move.fromCol, move.toRow, move.toCol);
-		System.out.println("TABLE make move move.player " + move.player + " from " + move.fromRow + move.fromCol + " to " + move.toRow + move.toCol);
-		//System.out.println("TABLE move.isJump() " + move.isJump());
+	void makeMove(Board board, int player, MovesMade move) { 
+        board.makeMove(board, currentPlayer, move); 
 		
 		if (move.isJump() == false) {
-			System.out.println("TABLE move.isJump() == false b.jumpedCheckers.clear();");
-			board.jumpedCheckers.clear();
+			board.clearJumpedCheckers();
 		}
 		
-        if (move.isJump()) { //checks if player must continue jumping
-			//System.out.println("~TABLE go to move.isJump() " + move.isJump());
-			//System.out.println("Table. makeMove: currentPlayer after jump " + currentPlayer);
+        if (move.isJump()) { 
             legalMoves = board.getLegalJumpsFrom(currentPlayer, move.toRow, move.toCol);
 			
-            if (legalMoves != null) { //if player must jump again
-				System.out.println("player must jump again");
-                selectedRow = move.toRow; //assigns selected row to destination row
-                selectedCol = move.toCol; //assigns selected column to destination column
-                repaint(); //repaints board
+            if (legalMoves != null) { 
+                selectedRow = move.toRow; 
+                selectedCol = move.toCol; 
+                repaint(); 
                 return;
             }
         }
 
-        if (currentPlayer == Board.player1) { //if it was player 1's turn
-            currentPlayer = Board.player2; //it's now player 2's
-            legalMoves = board.getLegalMoves(currentPlayer); //gets legal moves for player 2
-			
+        if (currentPlayer == Board.PLAYER_1) { 
+            currentPlayer = Board.PLAYER_2;
+            legalMoves = board.getLegalMoves(currentPlayer); 
+			/*
             if (legalMoves == null) { //if there aren't any moves, player 1 wins
                 gameOver();
 			}
-        } else { //otherwise, if it was player 2's turn
-            currentPlayer = Board.player1; //it's now player 1's turn
-            legalMoves = board.getLegalMoves(currentPlayer); //gets legal moves for player 1
-			
+			*/
+        } else { 
+            currentPlayer = Board.PLAYER_1; 
+            legalMoves = board.getLegalMoves(currentPlayer); 
+			/*
             if (legalMoves == null) //if there aren't any moves, player 2 wins
                 gameOver();
+			*/
         }
 
-        selectedRow = -1; //no squares are not selected
+        selectedRow = -1; 
 
-        if (legalMoves != null) { //if there are legal moves
-            boolean sameFromSquare = true; //declares boolean sameFromSquare
-            for (int i = 1; i < legalMoves.length; i++) //runs through all legal moves
-                if (legalMoves[i].fromRow != legalMoves[0].fromRow //if there are any legal moves besides the selected row
-                        || legalMoves[i].fromCol != legalMoves[0].fromCol) { //and column
-                    sameFromSquare = false; //declares sameFromSquare as false
+        if (legalMoves != null) { 
+            boolean sameFromSquare = true; 
+            for (int i = 1; i < legalMoves.length; i++) 
+                if (legalMoves[i].fromRow != legalMoves[0].fromRow 
+                        || legalMoves[i].fromCol != legalMoves[0].fromCol) { 
+                    sameFromSquare = false; 
                     break;
                 }
-            if (sameFromSquare) { //if true, the player's final piece is already selected
+            if (sameFromSquare) { 
                 selectedRow = legalMoves[0].fromRow;
                 selectedCol = legalMoves[0].fromCol;
             }
         }
-		
-		
-
-        repaint(); //repaints board
-
+        repaint(); 
     }
 	
 	public void paintComponent(Graphics g) {
         super.paintComponent(g);
-		//System.out.println("paintComponent");
-        //g.setColor(new Color(139,119,101)); //black
-        //g.fillRect(0, 30, 324, 324);
 		g.setColor(Color.white);
-		g.fillRect(0, 0, 374, 374);
-        //g.fillRect(400, 0, 200, 374);
-		Font big = new Font ("Courier New", 1, 14);
+		g.fillRect(0, 0, 374, 374);	
 		g.setColor(Color.black);
-		g.setFont(big);
-		
-		//g.drawString("Move history", 450, 20);
-		
+		g.setFont(big);		
 		int num = 9;
-		int num1 = -1;
-		String a = "A";
-		String b = "B";
-		String c = "C";
-		String d = "D";
-		String e = "E";
-		String f = "F";
-		String g1 = "G";
-		String h = "H";
-		
-		
 		for (int row = 0; row < 8; row++) {
 			num--;
             for (int col = 0; col < 8; col++) {
@@ -283,26 +235,25 @@ public class Table extends JPanel implements MouseListener {
 				}
 				
                 if ( row % 2 == col % 2 ) {
-					g.setColor(new Color(238,203,173)); //white
+					g.setColor(new Color(238,203,173)); 
 				}
                 else {
                    g.setColor(new Color(139,119,101));
 				}
-				
-                //g.fillRect(2 + col*40 + 25, 2 + row*40 + 55, 40, 40);
-				g.fillRect(2 + col*40 + 25, 2 + row*40 + 25, 40, 40);
+
+				g.fillRect(col*40 + 27, row*40 + 27, 40, 40);
 				
                 switch (board.pieceAt(row,col)) {
-                    case Board.player1:
+                    case Board.PLAYER_1:
                         paintChecker(g, row, col, userColor, 0);
                         break;
-                    case Board.player2:
+                    case Board.PLAYER_2:
                         paintChecker(g, row, col, (0 - userColor), 0);
                         break;		
-                    case Board.playerKing1:
+                    case Board.PLAYER_KING_1:
                         paintChecker(g, row, col, userColor, 1);
                         break; 
-                    case Board.playerKing2:
+                    case Board.PLAYER_KING_2:
                         paintChecker(g, row, col, (0 - userColor), 1);
                         break;
                 }
@@ -316,10 +267,9 @@ public class Table extends JPanel implements MouseListener {
 		if (gameInProgress == false) {
 			g.setColor(Color.white);
 			g.fillRect(0, 0, 374, 374);
-			Font big1 = new Font ("Courier New", 1, 14);
 			g.setColor(Color.black);
-			g.setFont(big1);
-			if (winner == 1) {
+			g.setFont(big);
+			if (winner == Board.PLAYER_1) {
 				g.drawString("Game over. You win!", 84, 187);
 			}
 			else {

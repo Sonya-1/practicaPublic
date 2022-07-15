@@ -1,13 +1,13 @@
-class MovesMade { //movesMade class begins
+class MovesMade { 
 	
-	Board b;
-	int player;
-    int fromRow;
-	int	fromCol; //declares from row and column as public ints
-    int toRow; 
-	int toCol; //declares to row and column as public ints
+	protected Board b;
+	protected int player;
+    protected int fromRow;
+	protected int fromCol; 
+    protected int toRow; 
+	protected int toCol;
 
-    MovesMade(Board board, int player, int r1, int c1, int r2, int c2) { //movesMade constructor takes in selected squares and assigns them to public ints
+    MovesMade(Board board, int player, int r1, int c1, int r2, int c2) { 
 		
 		b = board;
 		this.player = player;
@@ -17,28 +17,25 @@ class MovesMade { //movesMade class begins
         toCol = c2;
     }
 	
-    boolean isJump() { //checks if move is a jump
-		if ((player == 2 || player == 4)) {
-			System.out.println("movesMade: playerKing. fromRow = " + fromRow + " fromCol = " + fromCol + " toRow = " + toRow + " toCol = " + toCol);
+    boolean isJump() { 
+		if ((player == b.PLAYER_KING_1 || player == b.PLAYER_KING_2)) {
 			if (fromRow >= toRow + 2 || fromRow <= toRow - 2) {
-				System.out.println("movesMade: move can be jump");
 				int opponent = 0;
 				int opponentKing = 0;
 				
-				if (player == 2) {
-					opponent = 3;
-					opponentKing = 4;
+				if (player == b.PLAYER_KING_1) {
+					opponent = b.PLAYER_2;
+					opponentKing = b.PLAYER_KING_2;
 				}
 				else {
-					opponent = 1;
-					opponentKing = 2;
+					opponent = b.PLAYER_1;
+					opponentKing = b.PLAYER_KING_1;
 				}
 				
 				int count = 0;
 				if (fromRow < toRow && fromCol < toCol) {
 					for (int i = 1; i < 8; i++) {
 						if (b.jumpedCheckers.size() == 0) {
-							System.out.println("movesMade: jumpedCheckers.size() == 0. return false");
 							return false;
 						}
 						
@@ -50,35 +47,17 @@ class MovesMade { //movesMade class begins
 						for (int j = 0; j < jc.length; j++) {
 							if (fromRow + i == jc[j].row && fromCol + i == jc[j].col) {
 								if (toRow > fromRow + i && toCol > fromCol + i) {
-									System.out.println("movesMade: 1 isJump true");
 									return true;
 								}	
 							}
 						}
 					}
-					/*
-					for (int i = 1; i < 8; i++) {
-						if (b.pieceAt(fromRow + i, fromCol + i) == opponent || b.pieceAt(fromRow + i, fromCol + i) == opponentKing) {
-							for (int j = 1; j < 8; j++) {
-								if (b.pieceAt(fromRow + i + j, fromCol + i + j) != 0) {//проверка что стоит впереди 
-									System.out.println("movesMade: if 1 return false");
-									return false;
-								}
-								if (b.pieceAt(fromRow + i + j, fromCol + i + j) == 0 && (fromRow + i + j == toRow) && (fromCol + i + j == toCol)) {
-									System.out.println("movesMade: isJump true");
-									return true;
-								}
-							}					
-						}
-					}
-					*/
 				}
 				
 				if (fromRow > toRow && fromCol < toCol) {
 					
 					for (int i = 1; i < 8; i++) {
 						if (b.jumpedCheckers.size() == 0) {
-							System.out.println("movesMade: jumpedCheckers.size() == 0. return false");
 							return false;
 						}
 						
@@ -89,8 +68,7 @@ class MovesMade { //movesMade class begins
 						
 						for (int j = 0; j < jc.length; j++) {
 							if (fromRow - i == jc[j].row && fromCol + i == jc[j].col) {
-								if (toRow < fromRow - i && toCol > fromCol + i) {
-									System.out.println("movesMade: 2 isJump true");		
+								if (toRow < fromRow - i && toCol > fromCol + i) {	
 									return true;
 								}	
 							}
@@ -101,7 +79,6 @@ class MovesMade { //movesMade class begins
 				if (fromRow < toRow && fromCol > toCol) {
 					for (int i = 1; i < 8; i++) {
 						if (b.jumpedCheckers.size() == 0) {
-							System.out.println("movesMade: jumpedCheckers.size() == 0. return false");
 							return false;
 						}
 						
@@ -112,22 +89,18 @@ class MovesMade { //movesMade class begins
 						
 						for (int j = 0; j < jc.length; j++) {
 							if (fromRow + i == jc[j].row && fromCol - i == jc[j].col) {
-								if (toRow > fromRow + i && toCol < fromCol - i) {
-									System.out.println("movesMade: 3 isJump true");
-										
+								if (toRow > fromRow + i && toCol < fromCol - i) {										
 									return true;
 								}	
 							}
 						}
 						
 					}
-					System.out.println("movesMade: if 3 return false");
 				}
 				
 				if (fromRow > toRow && fromCol > toCol) {
 					for (int i = 1; i < 8; i++) {
 						if (b.jumpedCheckers.size() == 0) {
-							System.out.println("movesMade: jumpedCheckers.size() == 0. return false");
 							return false;
 						}
 						
@@ -139,7 +112,6 @@ class MovesMade { //movesMade class begins
 						for (int j = 0; j < jc.length; j++) {
 							if (fromRow - i == jc[j].row && fromCol - i == jc[j].col) {
 								if (toRow < fromRow - i && toCol < fromCol - i) {
-									System.out.println("movesMade: 4 isJump true");		
 									return true;
 								}	
 							}
@@ -147,7 +119,6 @@ class MovesMade { //movesMade class begins
 					}
 				}
 			}
-			System.out.println("movesMade: not a jump");
 			return false;
 		}
         else {
